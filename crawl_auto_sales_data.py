@@ -128,26 +128,26 @@ def export_sales_data_to_csv(nation_sales_data, cities_sales_data, csv_file='aut
     for series_nation_sales_data in nation_sales_data:
         row = {}
         series_id = int(series_nation_sales_data['series_id'])
+        row['series_name'] = series_nation_sales_data['series_name']
+        row['brand_name'] = series_nation_sales_data['brand_name']
+        row['sub_brand_name'] = series_nation_sales_data['sub_brand_name']
+        row['min_price'] = series_nation_sales_data['min_price']
+        row['max_price'] = series_nation_sales_data['max_price']
+        row['dealer_price'] = series_nation_sales_data['dealer_price']
+        outter_detail_type = int(series_nation_sales_data['outter_detail_type'])
+        row['outter_detail_type'] = outter_detail_types[
+            outter_detail_type] if outter_detail_type in outter_detail_types else 'N/A'
+        row['rank'] = series_nation_sales_data['rank']
+        row['last_rank'] = series_nation_sales_data['last_rank']
+        row['全国'] = series_nation_sales_data['count']
         if series_id in series_city_sales_data:
-            row['series_name'] = series_nation_sales_data['series_name']
-            row['brand_name'] = series_nation_sales_data['brand_name']
-            row['sub_brand_name'] = series_nation_sales_data['sub_brand_name']
-            row['min_price'] = series_nation_sales_data['min_price']
-            row['max_price'] = series_nation_sales_data['max_price']
-            row['dealer_price'] = series_nation_sales_data['dealer_price']
-            outter_detail_type = int(series_nation_sales_data['outter_detail_type'])
-            row['outter_detail_type'] = outter_detail_types[
-                outter_detail_type] if outter_detail_type in outter_detail_types else 'N/A'
-            row['rank'] = series_nation_sales_data['rank']
-            row['last_rank'] = series_nation_sales_data['last_rank']
-            row['全国'] = series_nation_sales_data['count']
             city_sales_data = series_city_sales_data[series_id]
             for city in cities_set:
                 if city in city_sales_data:
                     row[city] = city_sales_data[city]
                 else:
                     row[city] = 0
-            exported_sales_data.append(row)
+        exported_sales_data.append(row)
     # 写入csv文件
     exported_csv_header = ['series_name', 'brand_name', 'sub_brand_name', 'min_price', 'max_price', 'dealer_price',
                            'outter_detail_type', 'rank', 'last_rank', "全国"]
@@ -207,13 +207,16 @@ def load_cities_sales_data(from_csv=False, csv_file='auto_sales_data_cities.csv'
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Crawl automotive sales data.')
     parser.add_argument('-local', action='store_true', default=False, help='Load data from local csv file')
-    parser.add_argument('-output', metavar='csv_file_name', type=str, default='auto_sales_data.csv',
+    # the default output file name, add year, month, day of today as suffix
+    today = time.strftime('%Y%m%d', time.localtime(time.time()))
+    parser.add_argument('-output', metavar='csv_file_name', type=str, default='auto_sales_data_' + today + '.csv',
                         help='The name of the exported csv file')
+
     args = parser.parse_args()
     print("Value of -local: ", args.local)
     print("Value of -output: ", args.output)
 
-    nation_sales_data = load_nation_sales_data(args.local)
-    cities_sales_data = load_cities_sales_data(args.local)
+    nation_sales_data = load_nation_sales_data(args.local, 'auto_sales_data_nation_' + today + '.csv')
+    cities_sales_data = load_cities_sales_data(args.local, 'auto_sales_data_cities_' + today + '.csv')
     export_sales_data_to_csv(nation_sales_data, cities_sales_data, args.output)
     print('导出成功, file_name:', args.output)
