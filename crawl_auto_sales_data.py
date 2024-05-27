@@ -153,7 +153,7 @@ def export_sales_data_to_csv(nation_sales_data, cities_sales_data, csv_file='aut
                            'outter_detail_type', 'rank', 'last_rank', "全国"]
     for city in cities_set:
         exported_csv_header.append(city)
-    with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+    with open(csv_file, 'w', newline='', encoding='utf-8-sig') as f:
         writer = csv.DictWriter(f, exported_csv_header)
         writer.writeheader()
         writer.writerows(exported_sales_data)
@@ -161,7 +161,7 @@ def export_sales_data_to_csv(nation_sales_data, cities_sales_data, csv_file='aut
 
 def load_nation_sales_data(from_csv=False, csv_file='auto_sales_data_nation.csv'):
     if from_csv:
-        with open(csv_file, 'r', newline='', encoding='utf-8') as f:
+        with open(csv_file, 'r', newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
             loaded_nation_sales_data = list(reader)
             print('全国销量数据', len(loaded_nation_sales_data))
@@ -170,7 +170,7 @@ def load_nation_sales_data(from_csv=False, csv_file='auto_sales_data_nation.csv'
         loaded_nation_sales_data = get_sales_data()
         print('全国销量数据', len(loaded_nation_sales_data))
         # 将全国销量数据单独保存在csv中，csv的每行是一个车型的销量数据
-        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+        with open(csv_file, 'w', newline='', encoding='utf-8-sig') as f:
             writer = csv.DictWriter(f, local_csv_header)
             writer.writeheader()
             writer.writerows(loaded_nation_sales_data)
@@ -179,7 +179,7 @@ def load_nation_sales_data(from_csv=False, csv_file='auto_sales_data_nation.csv'
 
 def load_cities_sales_data(from_csv=False, csv_file='auto_sales_data_cities.csv'):
     if from_csv:
-        with open(csv_file, 'r', newline='', encoding='utf-8') as f:
+        with open(csv_file, 'r', newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
             city_sales_data = list(reader)
             print('城市销量数据', len(city_sales_data))
@@ -197,7 +197,7 @@ def load_cities_sales_data(from_csv=False, csv_file='auto_sales_data_cities.csv'
                 city_sales_data.extend(city_data)
         print('城市销量数据', len(city_sales_data))
         # 将城市销量数据单独保存在csv中，csv的每行是一个城市的销量数据
-        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+        with open(csv_file, 'w', newline='', encoding='utf-8-sig') as f:
             writer = csv.DictWriter(f, local_csv_header)
             writer.writeheader()
             writer.writerows(city_sales_data)
