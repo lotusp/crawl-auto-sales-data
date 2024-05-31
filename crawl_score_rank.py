@@ -1,8 +1,7 @@
-import requests
+import argparse
 import csv
 import time
-import random
-import argparse
+import requests
 
 # csv文件编码
 utf_sig = 'utf-8-sig'
@@ -33,74 +32,84 @@ local_csv_header = ['series_id', 'series_name', 'brand_id', 'brand_name', 'sub_b
                     'interior_score', 'interior_rank', 'configuration_score', 'configuration_rank', 'control_score',
                     'control_rank', 'power_score', 'power_rank', 'space_score', 'space_rank']
 
-#
-def get_series_scores(score_type: int):
-    page_size = 1000
-    offset = 0
-    data_count = 1000
-    # 逐页获取销量数据
-    series_score_list = []
-    while data_count == page_size:
-        url = rank_score_url.format(page_size, offset, score_type)
-        response = requests.get(url)
-        json_data = response.json()
-        data_count = len(json_data['data']['list']) if json_data['data']['list'] else 0
-        if data_count > 0:
-            rank_data = parse_series_score(json_data, score_type)
-            series_score_list.extend(rank_data)
-        offset += page_size
-    return series_score_list
 
-# 从json中提取数据
-def parse_series_score(json_data, score_type):
-    series_scores = []
-    for item in json_data['data']['list']:
-        series_scores.append({
-            'series_id': item['series_id'],
-            'brand_id': item['brand_id'],
-            'brand_name': item['brand_name'],
-            'sub_brand_id': item['sub_brand_id'],
-            'sub_brand_name': item['sub_brand_name'],
-            'series_name': item['series_name'],
-            'score_type': score_type,
-            'rank': item['rank'],
-            'score': float(item['score'])/100
-        })
-    return series_scores
+class SeriesScore:
+    def __init__(self, series_id, brand_id, brand_name, sub_brand_id, sub_brand_name, series_name, scores, ranks):
+        self.series_id = series_id
+        self.brand_id = brand_id
+        self.brand_name = brand_name
+        self.sub_brand_id = sub_brand_id
+        self.sub_brand_name = sub_brand_name
+        self.series_name = series_name
+        self.scores = scores
+        self.ranks = ranks
 
-def get_all_scores():
-    all_series_scores = []
-    for score_type in score_type_list:
-        all_series_scores.extend(get_series_scores(score_type))
-    return all_series_scores
+    @classmethod
+    def from_json(cls, score_type, item):
+        scores = {score_type: float(item['score']) / 100}
+        ranks = {score_type: item['rank']}
+        return cls(
+            item['series_id'],
+            item['brand_id'],
+            item['brand_name'],
+            item['sub_brand_id'],
+            item['sub_brand_name'],
+            item['series_name'],
+            scores,
+            ranks
+        )
 
-# 导出销量数据到csv中
-def export_score_rank_to_csv(series_score_list, csv_file='score_rank_data.csv'):
-    series_score_map = {}
-    for item in series_score_list:
-        series_id = int(item['series_id'])
-        if series_id not in series_score_map:
-            series_score_map[series_id] = {}
-            series_score_map[series_id]['series_id'] = series_id
-            series_score_map[series_id]['series_name'] = item['series_name']
-            series_score_map[series_id]['brand_id'] = item['brand_id']
-            series_score_map[series_id]['brand_name'] = item['brand_name']
-            series_score_map[series_id]['sub_brand_id'] = item['sub_brand_id']
-            series_score_map[series_id]['sub_brand_name'] = item['sub_brand_name']
-        score_name = score_type_list[item['score_type']] + '_score'
-        rank_name = score_type_list[item['score_type']] + '_rank'
-        series_score_map[series_id][score_name] = item['score']
-        series_score_map[series_id][rank_name] = item['rank']
+    def update_score_rank(self, score_type, item):
+        self.scores[score_type] = float(item['score']) / 100
+        self.ranks[score_type] = item['rank']
 
-    # 写入csv文件
-    with open(csv_file, 'w', newline='', encoding=utf_sig) as f:
-        writer = csv.DictWriter(f, local_csv_header)
-        writer.writeheader()
-        writer.writerows(series_score_map.values())
+
+class ScoreRankCrawler:
+    def __init__(self):
+        self.series_scores = {}
+
+    def get_series_scores(self):
+        for score_type in score_type_list:
+            self.get_series_score_by_type(score_type)
+
+    def get_series_score_by_type(self, score_type):
+        page_size = 1000
+        offset = 0
+        data_count = 1000
+        while data_count == page_size:
+            url = rank_score_url.format(page_size, offset, score_type)
+            response = requests.get(url)
+            json_data = response.json()
+            data_count = len(json_data['data']['list']) if json_data['data']['list'] else 0
+            if data_count > 0:
+                for item in json_data['data']['list']:
+                    if item['series_id'] not in self.series_scores:
+                        self.series_scores[item['series_id']] = SeriesScore.from_json(score_type, item)
+                    else:
+                        self.series_scores[item['series_id']].update_score_rank(score_type, item)
+            offset += page_size
+
+    def export_score_rank_to_csv(self, csv_file='score_rank_data.csv'):
+        csv_rows = []
+        for series_score in self.series_scores.values():
+            row = {'series_id': series_score.series_id, 'brand_id': series_score.brand_id,
+                   'brand_name': series_score.brand_name, 'sub_brand_id': series_score.sub_brand_id,
+                   'sub_brand_name': series_score.sub_brand_name, 'series_name': series_score.series_name}
+            for score_type in score_type_list:
+                score_name = score_type_list[score_type] + '_score'
+                rank_name = score_type_list[score_type] + '_rank'
+                row[score_name] = series_score.scores[score_type]
+                row[rank_name] = series_score.ranks[score_type]
+            csv_rows.append(row)
+
+        with open(csv_file, 'w', newline='', encoding=utf_sig) as f:
+            writer = csv.DictWriter(f, local_csv_header)
+            writer.writeheader()
+            writer.writerows(csv_rows)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Crawl series score data.')
-    # the default output file name, add year, month, day of today as suffix
     today = time.strftime('%Y%m%d', time.localtime(time.time()))
     parser.add_argument('-output', metavar='csv_file_name', type=str, default='score_rank_data_' + today + '.csv',
                         help='The name of the local csv file')
@@ -108,7 +117,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print("Value of -output: ", args.output)
 
-    series_score_list = get_all_scores()
-    export_score_rank_to_csv(series_score_list, args.output)
+    crawler = ScoreRankCrawler()
+    crawler.get_series_scores()
+    crawler.export_score_rank_to_csv(args.output)
 
     print('导出成功, file_name:', args.output)
