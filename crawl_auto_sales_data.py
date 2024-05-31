@@ -4,43 +4,7 @@ import time
 import random
 import argparse
 
-# csv文件编码
-utf_sig = 'utf-8-sig'
-
-#  0-微型车，1-小型车，2-紧凑型车，3-中型车，4-中大型车，5-大型车
-#  10-小型SUV，11-紧凑型SUV，12-中型SUV，13-中大型SUV，14-大型SUV
-#  20-小型MPV，21-紧凑型MPV，22-中型MPV，23-中大型MPV，24-大型MPV
-outter_detail_types = {
-    0: '微型车',
-    1: '小型车',
-    2: '紧凑型车',
-    3: '中型车',
-    4: '中大型车',
-    5: '大型车',
-    10: '小型SUV',
-    11: '紧凑型SUV',
-    12: '中型SUV',
-    13: '中大型SUV',
-    14: '大型SUV',
-    20: '小型MPV',
-    21: '紧凑型MPV',
-    22: '中型MPV',
-    23: '中大型MPV',
-    24: '大型MPV'
-}
-
-# 1-纯电动，2-插电式混动，3-增程式
-new_energy_types = {
-    0: 'N/A',
-    1: '纯电动',
-    2: '插电式混动',
-    3: '增程式'
-}
-
-# request headers
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36'
-}
+from constants import HEADERS, OUTTER_DETAIL_TYPES, UTF_SIG
 
 # local csv header for automotive sales data
 local_csv_header = ['city', 'series_id', 'series_name', 'brand_id', 'brand_name', 'sub_brand_id', 'sub_brand_name',
@@ -98,7 +62,7 @@ def parse_sales_data(json_data, city_name):
 # 获取所有的城市列表
 def get_cities():
     url = 'https://www.dongchedi.com/motor/dealer/m/v1/get_dealer_city_list/'
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=HEADERS)
     json_data = response.json()
     cities = []
     for item in json_data['data']:
@@ -138,8 +102,8 @@ def export_sales_data_to_csv(nation_sales_data, cities_sales_data, csv_file='aut
         row['max_price'] = series_nation_sales_data['max_price']
         row['dealer_price'] = series_nation_sales_data['dealer_price']
         outter_detail_type = int(series_nation_sales_data['outter_detail_type'])
-        row['outter_detail_type'] = outter_detail_types[
-            outter_detail_type] if outter_detail_type in outter_detail_types else 'N/A'
+        row['outter_detail_type'] = OUTTER_DETAIL_TYPES[
+            outter_detail_type] if outter_detail_type in OUTTER_DETAIL_TYPES else 'N/A'
         row['rank'] = series_nation_sales_data['rank']
         row['last_rank'] = series_nation_sales_data['last_rank']
         row['全国'] = series_nation_sales_data['count']
@@ -156,7 +120,7 @@ def export_sales_data_to_csv(nation_sales_data, cities_sales_data, csv_file='aut
                            'outter_detail_type', 'rank', 'last_rank', "全国"]
     for city in cities_set:
         exported_csv_header.append(city)
-    with open(csv_file, 'w', newline='', encoding=utf_sig) as f:
+    with open(csv_file, 'w', newline='', encoding=UTF_SIG) as f:
         writer = csv.DictWriter(f, exported_csv_header)
         writer.writeheader()
         writer.writerows(exported_sales_data)
@@ -164,7 +128,7 @@ def export_sales_data_to_csv(nation_sales_data, cities_sales_data, csv_file='aut
 
 def load_nation_sales_data(from_csv=False, csv_file='auto_sales_data_nation.csv'):
     if from_csv:
-        with open(csv_file, 'r', newline='', encoding=utf_sig) as f:
+        with open(csv_file, 'r', newline='', encoding=UTF_SIG) as f:
             reader = csv.DictReader(f)
             loaded_nation_sales_data = list(reader)
             print('全国销量数据', len(loaded_nation_sales_data))
@@ -173,7 +137,7 @@ def load_nation_sales_data(from_csv=False, csv_file='auto_sales_data_nation.csv'
         loaded_nation_sales_data = get_sales_data()
         print('全国销量数据', len(loaded_nation_sales_data))
         # 将全国销量数据单独保存在csv中，csv的每行是一个车型的销量数据
-        with open(csv_file, 'w', newline='', encoding=utf_sig) as f:
+        with open(csv_file, 'w', newline='', encoding=UTF_SIG) as f:
             writer = csv.DictWriter(f, local_csv_header)
             writer.writeheader()
             writer.writerows(loaded_nation_sales_data)
@@ -182,7 +146,7 @@ def load_nation_sales_data(from_csv=False, csv_file='auto_sales_data_nation.csv'
 
 def load_cities_sales_data(from_csv=False, csv_file='auto_sales_data_cities.csv'):
     if from_csv:
-        with open(csv_file, 'r', newline='', encoding=utf_sig) as f:
+        with open(csv_file, 'r', newline='', encoding=UTF_SIG) as f:
             reader = csv.DictReader(f)
             city_sales_data = list(reader)
             print('城市销量数据', len(city_sales_data))
@@ -200,7 +164,7 @@ def load_cities_sales_data(from_csv=False, csv_file='auto_sales_data_cities.csv'
                 city_sales_data.extend(city_data)
         print('城市销量数据', len(city_sales_data))
         # 将城市销量数据单独保存在csv中，csv的每行是一个城市的销量数据
-        with open(csv_file, 'w', newline='', encoding=utf_sig) as f:
+        with open(csv_file, 'w', newline='', encoding=UTF_SIG) as f:
             writer = csv.DictWriter(f, local_csv_header)
             writer.writeheader()
             writer.writerows(city_sales_data)
