@@ -1,4 +1,6 @@
 # csv文件编码
+from enum import Enum
+
 UTF_SIG = 'utf-8-sig'
 
 #  0-微型车，1-小型车，2-紧凑型车，3-中型车，4-中大型车，5-大型车
@@ -33,15 +35,21 @@ NEW_ENERGY_TYPES = {
 
 # 懂车分榜
 SCORE_TYPE_LIST = {
-    58: 'overall',
-    59: 'comfort',
-    51: 'exterior',
-    57: 'interior',
-    53: 'configuration',
-    54: 'control',
-    55: 'power',
-    56: 'space'
+    58: 'overall',  # 总分
+    59: 'comfort',  # 舒适分
+    51: 'exterior',  # 外观分
+    57: 'interior',  # 内饰分
+    53: 'configuration',  # 配置分
+    54: 'control',  # 操控分
+    55: 'power',  # 动力分
+    56: 'space'  # 空间分
 }
+
+
+class RankDataType(Enum):
+    NATION = 11  # 全国排行
+    CITY = 64  # 城市排行
+
 
 # request headers
 HEADERS = {
